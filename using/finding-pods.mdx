@@ -1,0 +1,99 @@
+---
+title: "Finding and searching for pods in the registry"
+description: "Search the CocoaPods registry using CocoaPods.org, the pod search CLI command, or the CDN all_pods.txt index to find the right library for your project."
+---
+
+The CocoaPods registry hosts over 100,000 open-source libraries for iOS and macOS development. Before adding a dependency to your project, you can search the registry through the web, the CLI, or the CDN index directly. This page covers all three approaches.
+
+## Using CocoaPods.org
+
+[CocoaPods.org](https://cocoapods.org) is the primary search interface for the registry. It is powered by Algolia and indexes each pod's name, summary, description, authors, and platform targets. Use the search bar on the homepage to find pods by keyword, name, or author.
+
+Each pod's detail page shows:
+
+- All published versions and release dates
+- Platform and deployment target requirements
+- Source repository link
+- License type and dependency tree
+
+<Tip>
+Filter results by platform (iOS, macOS, watchOS, tvOS) using the platform selector on CocoaPods.org to avoid seeing pods that don't support your target.
+</Tip>
+
+## Using `pod search`
+
+The CocoaPods CLI includes a `pod search` command that queries a local index of the registry. Run it from any directory — no Podfile is required.
+
+```bash
+pod search Alamofire
+```
+
+To search across pod names, summaries, and descriptions use a quoted keyword:
+
+```bash
+pod search "networking" --simple
+```
+
+The `--simple` flag limits results to the pod name and summary, making output easier to scan when many results match. Without it, `pod search` prints the full spec for each match.
+
+<Tip>
+Run `pod repo update` before searching if your local index is out of date. This syncs your local copy with the latest CDN index.
+</Tip>
+
+## Browsing the CDN index
+
+The CDN exposes a plain-text file listing every pod in the registry, one name per line:
+
+```
+https://cdn.cocoapods.org/all_pods.txt
+```
+
+You can download it to get a full snapshot of available pods:
+
+```bash
+curl -O https://cdn.cocoapods.org/all_pods.txt
+```
+
+The file contains one pod name per line in alphabetical order. It is regenerated whenever a new pod is published.
+
+## Checking if a pod exists
+
+To check whether a specific pod is in the registry, search `all_pods.txt` by name:
+
+```bash
+curl -s https://cdn.cocoapods.org/all_pods.txt | grep -i "AJSDKAppSp"
+```
+
+Alternatively, you can try fetching the pod's podspec JSON directly. The Specs directory is organized in a sharded three-level path derived from the pod name. For example, `AJSDKAppSp` has the prefix `a/0/0`, so its podspec lives at:
+
+```
+https://cdn.cocoapods.org/Specs/a/0/0/AJSDKAppSp/0.0.1/AJSDKAppSp.podspec.json
+```
+
+A successful response returns the podspec JSON. A 404 means the pod or version does not exist. The podspec for `AJSDKAppSp` version `0.0.1` looks like this:
+
+```json
+{
+  "name": "AJSDKAppSp",
+  "version": "0.0.1",
+  "summary": "ios AJSDKAppSp versionUpdate Notice",
+  "homepage": "https://github.com/anji-plus/aj_ios_appsp",
+  "license": "MIT",
+  "authors": {
+    "blackxu": "747373635@qq.com"
+  },
+  "platforms": {
+    "ios": "9.0"
+  },
+  "source": {
+    "git": "https://github.com/anji-plus/aj_ios_appsp.git",
+    "tag": "0.0.1"
+  },
+  "requires_arc": true,
+  "swift_versions": "4.0",
+  "source_files": "AppSpSDK/AppSpSDK/**/*.swift",
+  "swift_version": "4.0"
+}
+```
+
+Once you have found the pod you want, see [Installing pods in your Xcode project](/using/installing-pods) to add it to your Podfile.

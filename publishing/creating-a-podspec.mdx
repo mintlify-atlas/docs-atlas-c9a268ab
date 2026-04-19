@@ -1,0 +1,114 @@
+---
+title: "Creating a .podspec file for your iOS library"
+description: "Write a .podspec file with required metadata, source location, file paths, and platform targets so CocoaPods can build and distribute your library."
+---
+
+A podspec (short for pod specification) is the file that describes your library to CocoaPods. It declares everything the tool needs to fetch, build, and link your code: the version, where the source lives, which files to compile, and what platforms you support. Every pod in the registry has one, and you must write one before you can publish.
+
+## Podspec basics
+
+Podspecs are written using a Ruby DSL and saved with a `.podspec` extension. The file must be at the root of your repository. Here is a minimal but real-world example:
+
+```ruby
+Pod::Spec.new do |spec|
+  spec.name         = 'MyLibrary'
+  spec.version      = '1.0.0'
+  spec.summary      = 'A short description of MyLibrary.'
+  spec.description  = <<-DESC
+    A longer description of MyLibrary.
+  DESC
+
+  spec.homepage     = 'https://github.com/username/MyLibrary'
+  spec.license      = { :type => 'MIT', :file => 'LICENSE' }
+  spec.author       = { 'Your Name' => 'you@example.com' }
+
+  spec.ios.deployment_target = '12.0'
+
+  spec.source       = { :git => 'https://github.com/username/MyLibrary.git', :tag => spec.version.to_s }
+  spec.source_files = 'Sources/**/*.swift'
+
+  spec.swift_versions = ['5.0', '5.1', '5.2']
+end
+```
+
+The `spec.version.to_s` pattern in `source` is idiomatic — it ensures the git tag always matches the version you declare, so the two can never drift out of sync.
+
+## Required fields
+
+Every podspec must include the following fields. If any are missing, `pod trunk push` will refuse to publish.
+
+| Field | Description |
+|---|---|
+| `name` | The pod name as it appears in the registry. Must match the filename (`MyLibrary.podspec`). |
+| `version` | The semantic version string for this release (e.g. `'1.0.0'`). |
+| `summary` | A one-line description, 140 characters or fewer. |
+| `homepage` | A URL to the project's home page or repository. |
+| `license` | The license type, and optionally the path to the license file. |
+| `author` | A hash mapping author name(s) to email address(es). |
+| `source` | Where CocoaPods fetches the source — typically a git URL with a tag. |
+| `source_files` | A glob pattern (or array of patterns) pointing to your source files. |
+
+<Warning>
+If any required field is missing or invalid, `pod trunk push` will fail validation before the spec is submitted. Run `pod spec lint` first to catch these errors locally.
+</Warning>
+
+## Validating your podspec
+
+Before pushing, validate your podspec locally using the CocoaPods linter:
+
+```bash
+pod spec lint MyLibrary.podspec
+```
+
+The linter fetches the source from the URL in `spec.source`, attempts to build the library, and reports any errors or warnings. Two flags are especially useful:
+
+- `--verbose` prints the full output of each validation step, which helps you trace exactly where a failure occurs.
+- `--allow-warnings` causes the linter to exit with a success code even when warnings are present. Pass the same flag to `pod trunk push` if you use it here.
+
+```bash
+pod spec lint MyLibrary.podspec --verbose --allow-warnings
+```
+
+<Tip>
+Always run `pod spec lint` before pushing. A passing lint check locally means far fewer surprises during the actual submission.
+</Tip>
+
+## Podspec JSON format
+
+The registry stores specs as JSON, not Ruby. When you run `pod trunk push`, the CLI converts your `.podspec` to JSON and stores the result in the Specs repository under a sharded directory path.
+
+You can inspect any published spec by fetching it from the CDN. For example, the `AJSDKAppSp` pod at version `0.0.1` is stored as:
+
+```
+https://cdn.cocoapods.org/Specs/a/0/0/AJSDKAppSp/0.0.1/AJSDKAppSp.podspec.json
+```
+
+Its contents look like this:
+
+```json
+{
+  "name": "AJSDKAppSp",
+  "version": "0.0.1",
+  "summary": "ios AJSDKAppSp versionUpdate Notice",
+  "homepage": "https://github.com/anji-plus/aj_ios_appsp",
+  "license": "MIT",
+  "authors": {
+    "blackxu": "747373635@qq.com"
+  },
+  "platforms": {
+    "ios": "9.0"
+  },
+  "source": {
+    "git": "https://github.com/anji-plus/aj_ios_appsp.git",
+    "tag": "0.0.1"
+  },
+  "requires_arc": true,
+  "swift_versions": "4.0",
+  "source_files": "AppSpSDK/AppSpSDK/**/*.swift",
+  "swift_version": "4.0"
+}
+```
+
+You do not need to write JSON yourself — the conversion happens automatically. However, knowing the JSON structure is useful when debugging CDN lookups or building tooling around the registry.
+
+For the complete list of supported podspec fields and their accepted values, see the [podspec format reference](/reference/podspec-format).

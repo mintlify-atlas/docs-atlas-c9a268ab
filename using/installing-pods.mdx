@@ -1,0 +1,106 @@
+---
+title: "Installing CocoaPods dependencies in Xcode"
+description: "Create a Podfile, declare pod version constraints and subspecs, run pod install to integrate dependencies, and keep them up to date in your Xcode project."
+---
+
+CocoaPods integrates dependencies into your Xcode project through a `Podfile` — a Ruby file that declares which pods your targets depend on and at which versions. This page walks you through creating a Podfile, understanding version constraints, running `pod install`, and keeping your dependencies up to date.
+
+## Creating a Podfile
+
+Run the following command in the root directory of your Xcode project to generate a `Podfile` automatically:
+
+```bash
+pod init
+```
+
+This creates a `Podfile` pre-populated with your project's target name. Open it in a text editor and add the pods you need. A complete example Podfile looks like this:
+
+```ruby
+platform :ios, '14.0'
+use_frameworks!
+
+target 'MyApp' do
+  pod 'Alamofire', '~> 5.0'
+  pod 'SwiftyJSON', '~> 5.0'
+end
+```
+
+The `platform` declaration sets the minimum deployment target for all pods. `use_frameworks!` links pods as dynamic frameworks, which is required for Swift pods.
+
+## Version requirements
+
+CocoaPods supports several version constraint operators. Choose the one that best matches how strictly you want to pin a dependency.
+
+| Operator | Example | Meaning |
+|---|---|---|
+| `~>` | `'~> 5.0'` | Compatible with 5.0, up to (not including) 6.0 |
+| `>=` | `'>= 5.0'` | Any version 5.0 or higher |
+| `=` | `'= 5.0.1'` | Exactly version 5.0.1 |
+| Range | `'> 5.0', '< 6.0'` | Greater than 5.0 and less than 6.0 |
+
+The `~>` (pessimistic) operator is the most common choice. `'~> 5.0'` allows patch and minor updates within the 5.x series, while `'~> 5.0.1'` allows only patch updates within 5.0.x.
+
+## Running pod install
+
+After editing your Podfile, install the declared pods:
+
+```bash
+pod install
+```
+
+CocoaPods resolves the dependency graph, downloads each pod's source, and integrates them into your Xcode project. It produces two outputs:
+
+- **`Podfile.lock`** — a snapshot of the exact versions installed
+- **`MyApp.xcworkspace`** — the Xcode workspace that includes both your project and the Pods project
+
+<Warning>
+Always commit `Podfile.lock` to version control. It ensures every developer on your team and every CI build installs the same dependency versions. Omitting it leads to inconsistent environments and hard-to-reproduce bugs.
+</Warning>
+
+<Note>
+After running `pod install`, always open `MyApp.xcworkspace` — not `MyApp.xcodeproj`. The `.xcworkspace` includes the compiled Pods and their build settings. Opening `.xcodeproj` directly will result in missing module errors.
+</Note>
+
+## Updating pods
+
+`pod install` and `pod update` behave differently:
+
+| Command | Behavior |
+|---|---|
+| `pod install` | Installs pods listed in `Podfile.lock` exactly. Adds new pods that aren't yet locked. |
+| `pod update` | Ignores `Podfile.lock` and resolves the latest versions allowed by your `Podfile` constraints. |
+
+Use `pod install` for day-to-day work and to onboard teammates. Use `pod update` when you intentionally want to pull in newer versions:
+
+```bash
+# Update all pods to the latest allowed versions
+pod update
+
+# Update a single pod only
+pod update Alamofire
+```
+
+After running `pod update`, review the changes to `Podfile.lock` and test your project before committing.
+
+## Subspecs
+
+Some pods expose subspecs — optional, named subsets of their functionality. Subspecs let you include only the parts of a pod you need, reducing compiled code and build times.
+
+Specify a subspec with a `/` after the pod name:
+
+```ruby
+target 'MyApp' do
+  pod 'Alamofire/URLEncodedForm'
+end
+```
+
+If you declare a subspec, only that component (and its dependencies) is installed. You can include multiple subspecs from the same pod:
+
+```ruby
+target 'MyApp' do
+  pod 'Alamofire/URLEncodedForm'
+  pod 'Alamofire/Multipart'
+end
+```
+
+Check the pod's documentation or podspec to see which subspecs are available.

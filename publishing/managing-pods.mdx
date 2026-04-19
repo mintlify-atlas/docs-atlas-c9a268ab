@@ -1,0 +1,66 @@
+---
+title: "Managing your published pods: owners, deprecation, deletion"
+description: "Add or remove pod owners, deprecate a pod, delete a specific version, and view pod metadata using the CocoaPods Trunk CLI after publishing."
+---
+
+Once a pod is published, you can manage its lifecycle directly from the CocoaPods CLI. Trunk lets you add collaborators as co-owners, mark a pod as deprecated when you are directing users elsewhere, delete a specific version in an emergency, and inspect a pod's current registry metadata.
+
+## Viewing pod info
+
+To see a pod's current ownership, published versions, and other metadata, run:
+
+```bash
+pod trunk info MyLibrary
+```
+
+The output lists every owner, every published version with its release date, and the pod's deprecation status. This is the fastest way to confirm that a push succeeded or to see who currently has ownership rights.
+
+## Adding and removing owners
+
+Ownership determines who can push new versions of a pod. You can share ownership with co-authors or transfer it to a new maintainer.
+
+Add an owner by their email address:
+
+```bash
+pod trunk add-owner MyLibrary someone@example.com
+```
+
+Remove an owner:
+
+```bash
+pod trunk remove-owner MyLibrary someone@example.com
+```
+
+The new owner must already have a Trunk account registered with that email address. After you add them, they can push new versions and manage ownership independently.
+
+## Deprecating a pod
+
+Use deprecation when you want to signal to users that a pod is no longer actively maintained or that they should migrate to a different library. Deprecating a pod does not remove it — existing versions remain installable — but CocoaPods displays a warning during `pod install` to inform developers.
+
+```bash
+pod trunk deprecate MyLibrary
+```
+
+<Tip>
+Prefer deprecation over deletion when users may still depend on your pod. Deprecation preserves access to all published versions while clearly communicating that the pod is no longer supported.
+</Tip>
+
+Deprecation cannot be reversed through the CLI. If you need to un-deprecate a pod, contact the CocoaPods team directly.
+
+## Deleting a pod version
+
+In rare situations — such as a version accidentally published with a security issue — you can delete a specific version:
+
+```bash
+pod trunk delete MyLibrary 1.0.0
+```
+
+<Warning>
+Deleting a version is a destructive operation. Any project that pins to that exact version will break the next time the developer runs `pod install` or `pod update`. Only delete a version if you have a compelling reason that outweighs the disruption to your users. You must be using CocoaPods 1.0 or later to access `pod trunk delete`.
+</Warning>
+
+Deleted versions cannot be re-published under the same version number. If you need to ship a fix, increment the version number and publish a new release instead.
+
+## Claiming an abandoned pod
+
+If a pod you need to maintain is registered to an owner who is no longer reachable and you cannot get push access, CocoaPods provides a formal claim process. Visit the [Claim Your Pods](http://blog.cocoapods.org/Claim-Your-Pods/) post on the CocoaPods blog for instructions on how to file a claim and what information you need to provide.

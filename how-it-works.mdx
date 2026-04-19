@@ -1,0 +1,92 @@
+---
+title: "How CocoaPods resolves specs via CDN and Trunk"
+description: "Explore the Specs repo architecture: sharded podspec storage, CDN index files for fast resolution, Trunk-only publishing, and Algolia search on CocoaPods.org."
+---
+
+The CocoaPods Specs registry is more than a Git repository — it is a system of interconnected components that work together to make dependency resolution fast, reliable, and scalable. This page explains the architecture: how podspecs are stored, how they are delivered via CDN, how library authors publish through Trunk, and how CocoaPods.org enables search.
+
+## The specs repository
+
+The Specs repo is a public Git repository on GitHub at [cocoapods/specs](https://github.com/cocoapods/specs). It contains the metadata — called podspecs — for every publicly available CocoaPods library. There are over 100,000 pods in the registry, each with one or more versioned specs.
+
+Podspecs are stored as JSON files organized in a three-level sharded directory structure:
+
+```
+Specs/{shard}/{shard}/{shard}/{PodName}/{version}/{PodName}.podspec.json
+```
+
+For example, the `AJSDKAppSp` pod at version `0.0.1` is stored at:
+
+```
+Specs/a/0/0/AJSDKAppSp/0.0.1/AJSDKAppSp.podspec.json
+```
+
+The shard values are derived from the pod name. This prevents any single directory from containing too many entries, keeping Git operations efficient even at 100,000+ pods.
+
+Each `.podspec.json` file describes the library in full: its name, version, summary, license, source URL, platform requirements, dependencies, and source files. Here is an abbreviated example:
+
+```json
+{
+  "name": "AJSDKAppSp",
+  "version": "0.0.1",
+  "summary": "ios AJSDKAppSp versionUpdate Notice",
+  "license": "MIT",
+  "platforms": { "ios": "9.0" },
+  "source": {
+    "git": "https://github.com/anji-plus/aj_ios_appsp.git",
+    "tag": "0.0.1"
+  },
+  "source_files": "AppSpSDK/AppSpSDK/**/*.swift"
+}
+```
+
+## CDN delivery
+
+When you run `pod install`, CocoaPods does not clone the full Specs Git repository. Instead, it resolves specs from a CDN. A Netlify deploy script generates a static `_site` folder from the repository contents; this folder is served over CDN and provides several index files that CocoaPods queries:
+
+| File | Contents |
+|------|----------|
+| `all_pods.txt` | One pod name per line — the complete list of available pods |
+| `all_pods_versions_{shard}.txt` | Each line lists a pod and all its versions: `PodName/0.0.1/0.0.2/1.0.0` |
+| `deprecated_podspecs.txt` | Paths to all podspecs marked as deprecated |
+| `CocoaPods-version.yml` | Minimum and latest supported CocoaPods versions |
+
+<Info>
+  The shard value in `all_pods_versions_{shard}.txt` corresponds to the first three levels of the directory structure, joined with underscores (for example, `a_0_0`).
+</Info>
+
+This CDN-based resolution means CocoaPods clients only download the index shards and individual podspecs they need, rather than the entire repository. The current minimum CocoaPods version required to use the CDN source is `1.0.0`, and the latest release is `1.16.1`.
+
+## Publishing via Trunk
+
+<Warning>
+  The Specs repo does not accept pull requests. Any open PRs are closed automatically by nightly automation. All pod submissions must go through **CocoaPods Trunk**.
+</Warning>
+
+CocoaPods Trunk is the authenticated publishing service for the registry. Library authors register an account with their email address and then use the `pod trunk push` command to submit a podspec:
+
+```bash
+pod trunk push MyLibrary.podspec
+```
+
+Trunk validates the podspec, runs lint checks, and — if everything passes — commits the new podspec JSON to the Specs repository and triggers a CDN redeploy. This ensures that every spec in the registry has been validated before it becomes available to other developers.
+
+For full publishing instructions, see [Setting up Trunk](/publishing/trunk-setup).
+
+## Algolia search
+
+[CocoaPods.org](https://cocoapods.org) uses Algolia to power full-text search across the pod index. When a new pod is published via Trunk, the index is updated so it appears in search results on the website. Developers can search by pod name, author, summary, or keywords without needing to interact with the Git repository or CDN files directly.
+
+## Further reading
+
+<CardGroup cols={2}>
+  <Card title="Repository structure" icon="folder-tree" href="/repo/structure">
+    Dive deeper into how the sharded directory layout is organized.
+  </Card>
+  <Card title="CDN deployment" icon="globe" href="/repo/cdn-deployment">
+    Learn how the Netlify deploy script generates and publishes the CDN index.
+  </Card>
+  <Card title="Setting up Trunk" icon="upload" href="/publishing/trunk-setup">
+    Register a Trunk account and publish your first pod to the registry.
+  </Card>
+</CardGroup>

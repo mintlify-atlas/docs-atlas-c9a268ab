@@ -1,97 +1,61 @@
 ---
-title: "Introduction"
-description: "Welcome to the new home for your documentation"
+title: "CocoaPods Specs: iOS & macOS package registry"
+description: "The CocoaPods Master Specs Repo hosts over 100,000 podspecs for iOS and macOS libraries. Find, install, and publish pods via CDN-backed resolution."
 ---
 
-## Setting up
+The CocoaPods Specs repository is the centralized registry powering dependency resolution for iOS and macOS projects worldwide. With over 100,000 library podspecs served via CDN, it provides fast, reliable access to the entire CocoaPods ecosystem. Whether you're adding a dependency to your project or publishing your own library for the community, this is where it all starts.
 
-Get your documentation site up and running in minutes.
-
-<Card
-  title="Start here"
-  icon="rocket"
-  href="/quickstart"
-  horizontal
->
-  Follow our three step quickstart guide.
-</Card>
-
-## Make it yours
-
-Design a docs site that looks great and empowers your users.
-
-<Columns cols={2}>
-  <Card
-    title="Edit locally"
-    icon="pen-to-square"
-    href="/development"
-  >
-    Edit your docs locally and preview them in real time.
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Add your first pod dependency and get a project running in minutes.
   </Card>
-  <Card
-    title="Customize your site"
-    icon="palette"
-    href="/essentials/settings"
-  >
-    Customize the design and colors of your site to match your brand.
+  <Card title="How It Works" icon="diagram-project" href="/how-it-works">
+    Understand how specs are stored, indexed, and resolved from the CDN.
   </Card>
-    <Card
-    title="Set up navigation"
-    icon="map"
-    href="/essentials/navigation"
-  >
-    Organize your docs to help users find what they need and succeed with your product.
+  <Card title="Publish a Pod" icon="upload" href="/publishing/trunk-setup">
+    Set up CocoaPods Trunk and push your library to the registry.
   </Card>
-  <Card
-    title="API documentation"
-    icon="terminal"
-    href="/api-reference/introduction"
-  >
-    Auto-generate API documentation from OpenAPI specifications.
+  <Card title="Podspec Reference" icon="file-code" href="/reference/podspec-format">
+    Full reference for every field available in a `.podspec` file.
   </Card>
-</Columns>
+</CardGroup>
 
-## Create beautiful pages
+## What is the Specs repo?
 
-Everything you need to create world-class documentation.
+The CocoaPods Specs repo is a Git repository containing the metadata — called podspecs — for every publicly available CocoaPods library. When you run `pod install`, CocoaPods uses this registry to locate the exact version of each dependency your project needs.
 
-<Columns cols={2}>
-  <Card
-    title="Write with MDX"
-    icon="pen-fancy"
-    href="/essentials/markdown"
-  >
-    Use MDX to style your docs pages.
+<CardGroup cols={2}>
+  <Card title="Find pods" icon="magnifying-glass" href="/using/finding-pods">
+    Search and browse available pods in the registry.
   </Card>
-  <Card
-    title="Code samples"
-    icon="code"
-    href="/essentials/code"
-  >
-    Add sample code to demonstrate how to use your product.
+  <Card title="Install pods" icon="box-open" href="/using/installing-pods">
+    Add pods to your Xcode project using a Podfile.
   </Card>
-  <Card
-    title="Images"
-    icon="image"
-    href="/essentials/images"
-  >
-    Display images and other media.
+  <Card title="CDN access" icon="globe" href="/using/cdn-access">
+    Access the specs index directly via the CDN endpoints.
   </Card>
-  <Card
-    title="Reusable snippets"
-    icon="recycle"
-    href="/essentials/reusable-snippets"
-  >
-    Write once and reuse across your docs.
+  <Card title="Registry structure" icon="folder-tree" href="/repo/structure">
+    Explore how specs are organized in the repository.
   </Card>
-</Columns>
+</CardGroup>
 
-## Need inspiration?
+## Publishing to the registry
 
-<Card
-  title="See complete examples"
-  icon="stars"
-  href="https://mintlify.com/customers"
->
-  Browse our showcase of exceptional documentation sites.
-</Card>
+<Note>
+The Specs repo does not accept pull requests. All pod submissions must go through **CocoaPods Trunk** using the `pod trunk push` command.
+</Note>
+
+<Steps>
+  <Step title="Create your podspec">
+    Write a `.podspec` file describing your library's metadata, source, and dependencies.
+  </Step>
+  <Step title="Set up Trunk access">
+    Register a CocoaPods Trunk account with your email to get publishing credentials.
+  </Step>
+  <Step title="Push to the registry">
+    Run `pod trunk push YourLibrary.podspec` to validate and publish your pod.
+  </Step>
+  <Step title="Manage your pod">
+    Use `pod trunk deprecate` or `pod trunk delete` to manage released versions.
+  </Step>
+</Steps>

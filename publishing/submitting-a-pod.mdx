@@ -1,0 +1,87 @@
+---
+title: "Submit your pod to the CocoaPods Specs registry"
+description: "Use pod trunk push to validate and publish a new pod or version to the CocoaPods registry, making it available to iOS and macOS developers worldwide."
+---
+
+Submitting a pod to the CocoaPods registry makes it available to millions of iOS and macOS developers who depend on CocoaPods to manage their project's dependencies. Once your pod is published, anyone can add it to their `Podfile` and install it with a single command.
+
+## Before you push
+
+Make sure all of the following are true before running `pod trunk push`:
+
+- Your podspec passes `pod spec lint` with no errors.
+- You have created a git tag in your repository that exactly matches the `version` in your podspec (e.g. `1.0.0`).
+- The source URL in your podspec is publicly accessible — Trunk fetches from it during validation.
+- You have a verified Trunk account. See [Setting up CocoaPods Trunk](/publishing/trunk-setup) if you have not registered yet.
+
+## Push your pod
+
+<Steps>
+  <Step title="Write and validate your podspec">
+    Create your `.podspec` file at the root of your repository and run the linter to catch any errors before submission:
+
+    ```bash
+    pod spec lint MyLibrary.podspec
+    ```
+
+    Fix any errors reported. If only warnings remain and you are comfortable accepting them, note the `--allow-warnings` flag for the push step.
+  </Step>
+
+  <Step title="Tag your release in git">
+    Create a git tag that matches the version string in your podspec, then push it to your remote:
+
+    ```bash
+    git tag 1.0.0
+    git push origin 1.0.0
+    ```
+
+    Trunk fetches the source at this exact tag during validation. If the tag does not exist or does not match the version field, the push will fail.
+  </Step>
+
+  <Step title="Push to Trunk">
+    Run `pod trunk push` with the path to your podspec:
+
+    ```bash
+    pod trunk push MyLibrary.podspec
+    ```
+
+    Trunk validates the spec, fetches the source from your git tag, builds the library, and — if everything passes — adds the JSON spec to the Specs repository and updates the CDN index.
+
+    Two flags are commonly used:
+
+    - `--allow-warnings` — submits the spec even if lint warnings are present. Use this only when you understand and accept each warning.
+    - `--skip-import-validation` — skips the import check. Useful for binary-only pods or pods that cannot be built in isolation.
+
+    ```bash
+    pod trunk push MyLibrary.podspec --allow-warnings
+    ```
+  </Step>
+
+  <Step title="Confirm the submission">
+    After a successful push, Trunk prints a confirmation message with the pod name and version. Your pod is now in the registry and the CDN will pick it up shortly.
+  </Step>
+</Steps>
+
+<Note>
+CDN propagation typically takes a few minutes after a successful push. If a developer runs `pod install` immediately after your submission and does not find the new version, ask them to wait a few minutes and then run `pod repo update` to refresh their local index.
+</Note>
+
+## Pushing a new version
+
+To release an updated version of your pod:
+
+1. Update the `version` field in your podspec to the new version string (e.g. `1.1.0`).
+2. Commit the podspec change to your repository.
+3. Create a new git tag matching the new version and push it.
+4. Run `pod trunk push MyLibrary.podspec` again.
+
+Each version is stored independently in the registry. Previously published versions remain available and are not affected by new submissions.
+
+## After submission
+
+Once your pod is in the registry:
+
+- It appears in the CDN index at `https://cdn.cocoapods.org/all_pods.txt`.
+- Its podspec JSON is accessible at the sharded CDN path for your pod name.
+- Developers can add it to their `Podfile` using `pod 'MyLibrary', '~> 1.0'` and install it with `pod install`.
+- It is searchable on [CocoaPods.org](https://cocoapods.org) and via `pod search`.

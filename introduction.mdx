@@ -1,0 +1,43 @@
+---
+title: "CocoaPods Specs: iOS & macOS dependency registry"
+description: "The CocoaPods Master Specs Repo is the public registry of iOS and macOS libraries. Learn what it provides and how to use it as a consumer or publisher."
+---
+
+The CocoaPods Master Specs Repo is the central registry that powers dependency management for iOS and macOS development. It hosts the podspec metadata for every publicly available CocoaPods library, enabling developers to declare, resolve, and install dependencies in Xcode projects.
+
+## What is CocoaPods?
+
+CocoaPods is the most widely used dependency manager for Swift and Objective-C projects. You declare your dependencies in a `Podfile`, run `pod install`, and CocoaPods resolves, downloads, and links everything into your Xcode workspace. The Specs repo is what makes this resolution possible — it is the source of truth for which libraries exist and what versions are available.
+
+## What this registry provides
+
+The Specs repo contains over 100,000 podspecs organized in a sharded directory structure. Each podspec is a JSON file describing a library's metadata: its name, version, source URL, license, platform requirements, and dependencies. CocoaPods resolves these specs via CDN, so you never need to clone the full repository to use it.
+
+Key capabilities:
+
+- **Versioned specs** — every published version of a pod is permanently available
+- **CDN delivery** — specs are resolved from a fast CDN, not a local Git clone
+- **Algolia search** — CocoaPods.org indexes the registry for full-text search
+- **Trunk publishing** — library authors submit pods through CocoaPods Trunk, not pull requests
+
+## Who this documentation is for
+
+This site is for two audiences:
+
+- **iOS and macOS developers** who use CocoaPods to manage dependencies in their projects
+- **Library authors** who want to publish their own pods to the registry
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" icon="rocket" href="/quickstart">
+    Install CocoaPods and add your first pod dependency in minutes.
+  </Card>
+  <Card title="Find pods" icon="magnifying-glass" href="/using/finding-pods">
+    Search and browse the 100,000+ pods available in the registry.
+  </Card>
+  <Card title="Publish a pod" icon="upload" href="/publishing/trunk-setup">
+    Set up CocoaPods Trunk and push your library to the registry.
+  </Card>
+  <Card title="Podspec reference" icon="file-code" href="/reference/podspec-format">
+    Full reference for every field available in a `.podspec` file.
+  </Card>
+</CardGroup>

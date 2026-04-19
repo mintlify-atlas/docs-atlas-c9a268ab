@@ -1,0 +1,69 @@
+---
+title: "CocoaPods Specs repo: sharded directory structure"
+description: "Learn how the Specs directory uses a 3-level sharded layout keyed on pod name hash prefixes to keep Git operations fast and the tree shallow."
+---
+
+The `Specs/` directory organizes every published podspec in a three-level sharded layout. Rather than placing all pods in a single flat directory, each pod is nested under three single-character path segments derived from its name hash. This keeps individual directory sizes small and makes Git operations fast even as the registry grows past 100,000 pods.
+
+<Info>
+  Sharding avoids the performance penalty of large flat directories. Git, GitHub, and most filesystems degrade when a single directory contains tens of thousands of entries. The three-level layout distributes pods evenly across up to 4,096 shard combinations, keeping each directory manageable.
+</Info>
+
+## Directory layout
+
+Every podspec lives at a predictable path inside `Specs/`:
+
+```text
+Specs/
+└── {shard1}/          # first char of hash prefix (0-9, a-f)
+    └── {shard2}/      # second char
+        └── {shard3}/  # third char
+            └── {PodName}/
+                └── {version}/
+                    └── {PodName}.podspec.json
+```
+
+A real example from the registry — `AJSDKAppSp` at version `0.0.1`:
+
+```text
+Specs/a/0/0/AJSDKAppSp/0.0.1/AJSDKAppSp.podspec.json
+```
+
+The three shard levels (`a`, `0`, `0`) come from the first three characters of the pod name's hash prefix. The `prefix_lengths` field in `CocoaPods-version.yml` is `[1, 1, 1]`, meaning each level contributes exactly one character.
+
+## Shard calculation
+
+The shard path for a pod is derived from the first three hexadecimal characters of a hash of the pod name. CocoaPods uses the same algorithm when it resolves a spec path, so clients can construct the exact URL for any pod without first fetching a directory listing.
+
+For example, a pod whose hash starts with `a00` is stored under `Specs/a/0/0/`. The corresponding CDN shard index file is `all_pods_versions_a_0_0.txt`.
+
+## CDN index files
+
+When the Specs repo is deployed to the CDN, a build script generates a `_site/` directory containing flat index files that CocoaPods clients download instead of cloning the full repository:
+
+| File | Description |
+|------|-------------|
+| `all_pods.txt` | Every pod name in the registry, one per line |
+| `all_pods_versions_{shard}.txt` | Pod names and all their published versions for one shard |
+| `deprecated_podspecs.txt` | Paths to podspecs marked as deprecated |
+| `CocoaPods-version.yml` | Minimum and latest supported CocoaPods versions |
+
+The shard suffix in `all_pods_versions_{shard}.txt` uses underscores to join the three directory levels — for example, `a_0_0` corresponds to `Specs/a/0/0/`.
+
+See [CDN deployment](/repo/cdn-deployment) for a full walkthrough of how these files are generated and published.
+
+## Versioning
+
+Each version of a pod gets its own subdirectory under the pod name directory. Multiple versions coexist without conflict:
+
+```text
+Specs/a/0/0/AJSDKAppSp/
+├── 0.0.1/
+│   └── AJSDKAppSp.podspec.json
+├── 0.0.2/
+│   └── AJSDKAppSp.podspec.json
+└── 1.0.0/
+    └── AJSDKAppSp.podspec.json
+```
+
+You can pin to a specific version or use a version range in your Podfile. See [versioning](/repo/versioning) for how semantic versioning and the `CocoaPods-version.yml` file interact with the registry.

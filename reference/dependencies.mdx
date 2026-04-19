@@ -1,0 +1,76 @@
+---
+title: "Declaring pod dependencies and version constraints"
+description: "How to use spec.dependency to declare required pods and version constraints, including operators, subspecs, and test target dependencies."
+---
+
+Podspecs can declare dependencies on other pods. When a consumer installs your pod, CocoaPods automatically resolves, downloads, and links every declared dependency and its transitive dependencies. You declare dependencies using the `spec.dependency` method in your Ruby DSL podspec.
+
+## Basic dependency declaration
+
+You can declare a dependency with no version constraint, a single constraint, or a range using two constraints:
+
+```ruby
+# No version constraint — any version is accepted
+spec.dependency 'Alamofire'
+
+# Pessimistic constraint — >= 5.0 and < 6.0
+spec.dependency 'Alamofire', '~> 5.0'
+
+# Explicit range — >= 5.0 and < 6.0
+spec.dependency 'Alamofire', '>= 5.0', '< 6.0'
+```
+
+<Tip>
+Prefer the pessimistic operator (`~>`) over an exact pin. It allows consumers to receive patch and minor updates within a compatible range, reducing the chance of version conflicts in projects with many dependencies.
+</Tip>
+
+## Version operators
+
+| Operator | Meaning |
+|---|---|
+| `= 1.0` | Exact version — only `1.0` is accepted. |
+| `> 1.0` | Greater than `1.0`. |
+| `>= 1.0` | Greater than or equal to `1.0`. |
+| `< 1.0` | Less than `1.0`. |
+| `<= 1.0` | Less than or equal to `1.0`. |
+| `~> 1.0` | Compatible with `1.0`: accepts `>= 1.0` and `< 2.0`. |
+| `~> 1.0.1` | Compatible with `1.0.1`: accepts `>= 1.0.1` and `< 1.1.0`. |
+
+The pessimistic operator (`~>`) anchors the upper bound to the next component above the last component you specify. `~> 1.0` allows up to (but not including) `2.0`; `~> 1.0.1` allows up to (but not including) `1.1.0`.
+
+## Subspec dependencies
+
+Many pods expose subspecs — named subsets of their functionality. You can depend on a specific subspec by appending its name with a slash:
+
+```ruby
+spec.dependency 'Alamofire/URLEncoding'
+spec.dependency 'ReactiveSwift/Operators', '~> 7.0'
+```
+
+When you depend on a subspec, CocoaPods installs only the files and dependencies declared in that subspec (plus any default subspec of the parent pod), rather than the entire pod.
+
+## Test target dependencies
+
+Dependencies that are only needed in tests belong in a test subspec, not in the main spec. This keeps them out of the consumer's dependency graph:
+
+```ruby
+spec.test_spec 'Tests' do |test_spec|
+  test_spec.source_files = 'Tests/**/*.swift'
+  test_spec.dependency 'Nimble', '~> 12.0'
+  test_spec.dependency 'Quick',  '~> 7.0'
+end
+```
+
+Test subspecs are not installed when a consumer adds your pod to their `Podfile`. They are used only when running `pod lib lint` or when another developer works on the pod directly.
+
+## Circular dependencies
+
+<Warning>
+Circular dependencies — where pod A depends on pod B and pod B depends on pod A — will cause `pod install` to fail with a resolution error. CocoaPods cannot determine a valid install order. Design your pod boundaries to avoid mutual dependencies; extract shared code into a third pod if two pods need each other.
+</Warning>
+
+## How dependency resolution works
+
+<Info>
+CocoaPods uses a constraint-satisfaction solver (based on Molinillo) to find a set of pod versions that satisfies all constraints declared across your `Podfile` and every installed pod's podspec. If no satisfying set exists — for example, because two pods require incompatible version ranges of the same dependency — the resolver reports a conflict and installation fails. Declaring broad, pessimistic constraints rather than exact pins gives the resolver more room to find a solution.
+</Info>

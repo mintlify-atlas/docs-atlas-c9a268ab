@@ -1,0 +1,91 @@
+---
+title: "Platform support and deployment targets in podspecs"
+description: "How to set iOS, macOS, tvOS, watchOS, and visionOS deployment targets in a podspec, including per-platform source files and dependencies."
+---
+
+Podspecs can target one or more Apple platforms with minimum deployment targets. CocoaPods uses these declarations to validate that a pod is compatible with the consumer's project settings, and to apply platform-specific source files, frameworks, and dependencies when building for a given platform.
+
+## Supported platforms
+
+CocoaPods recognizes the following Apple platforms:
+
+| Platform | Key in podspec |
+|---|---|
+| iOS | `ios` |
+| macOS (formerly OS X) | `macos` / `osx` |
+| tvOS | `tvos` |
+| watchOS | `watchos` |
+| visionOS | `visionos` |
+
+<Note>
+`osx` and `macos` are both accepted as the macOS platform key. The registry uses `osx` in older specs and `macos` in newer ones — either form works, but `macos` is preferred for new podspecs.
+</Note>
+
+## Setting deployment targets
+
+You can target a single platform or declare minimum deployment targets for several platforms at once.
+
+### Single platform
+
+Use `spec.platform` when your library supports exactly one platform:
+
+```ruby
+spec.platform = :ios, '12.0'
+```
+
+### Multiple platforms
+
+Use the platform-specific `deployment_target` accessor to support more than one platform in the same podspec:
+
+```ruby
+spec.ios.deployment_target     = '12.0'
+spec.macos.deployment_target   = '10.15'
+spec.tvos.deployment_target    = '12.0'
+spec.watchos.deployment_target = '5.0'
+spec.visionos.deployment_target = '1.0'
+```
+
+<Note>
+`spec.platform =` is mutually exclusive with `spec.ios.deployment_target =`. Use one or the other. If you need to support multiple platforms, always use the per-platform accessors — `spec.platform =` silently limits the pod to that single platform even if you add other deployment targets later.
+</Note>
+
+<Tip>
+Set the broadest (lowest) deployment target that your code genuinely supports. A lower minimum deployment target makes your pod available to a wider audience. Only raise it when you use APIs that are not available on older OS versions.
+</Tip>
+
+## Platform-specific source files
+
+When your source tree contains platform-specific implementations, use the platform-scoped `source_files` accessor to include the right files for each platform:
+
+```ruby
+spec.source_files = 'Sources/Shared/**/*.swift'
+
+spec.ios.source_files   = 'Sources/iOS/**/*.swift'
+spec.macos.source_files = 'Sources/macOS/**/*.swift'
+spec.tvos.source_files  = 'Sources/tvOS/**/*.swift'
+```
+
+Platform-specific values are merged with the top-level `source_files` value, so shared files do not need to be repeated.
+
+## Platform-specific dependencies
+
+You can restrict a dependency to a specific platform using the same accessor pattern:
+
+```ruby
+spec.ios.dependency   'UIKit'
+spec.macos.dependency 'AppKit'
+spec.ios.dependency   'SomeiOSOnlyPod', '~> 3.0'
+```
+
+This is useful when you depend on a library that only ships for a subset of your supported platforms, avoiding resolution errors on platforms where the dependency is unavailable.
+
+## Platform-specific frameworks and build settings
+
+The same platform-scoping works for `frameworks`, `weak_frameworks`, `libraries`, and `pod_target_xcconfig`:
+
+```ruby
+spec.ios.frameworks   = ['UIKit', 'ARKit']
+spec.macos.frameworks = ['AppKit', 'SceneKit']
+
+spec.ios.pod_target_xcconfig = { 'ENABLE_BITCODE' => 'NO' }
+```

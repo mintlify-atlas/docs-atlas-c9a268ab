@@ -1,0 +1,99 @@
+---
+title: "Podspec source types: git, http, svn, hg, and path"
+description: "Reference for all source hash options in a CocoaPods podspec: git, http, svn, hg, and path — with options and examples for each."
+---
+
+The `source` field tells CocoaPods where to download the library's code. You provide a Ruby hash whose key identifies the source type and whose additional keys specify version pinning, authentication hints, or archive options. The source must point to a stable, immutable location for every published version — CocoaPods consumers rely on it being reproducible.
+
+## Git source
+
+Git is the most common source type. CocoaPods clones the repository and checks out the specified reference.
+
+```ruby
+spec.source = { :git => 'https://github.com/user/MyLib.git', :tag => spec.version.to_s }
+```
+
+| Option | Description |
+|---|---|
+| `:git` | The repository URL (required). |
+| `:tag` | A tag to check out. Recommended for published specs. |
+| `:commit` | A full SHA-1 commit hash to check out. |
+| `:branch` | A branch name to check out. |
+| `:submodules` | Set to `true` to initialize and update submodules after cloning. |
+
+<Tip>
+Use `:tag => spec.version.to_s` to keep the git tag in sync with the version field automatically. If you update `spec.version`, the tag reference updates with it — you cannot forget to change one but not the other.
+</Tip>
+
+<Warning>
+Do not use `:branch` in specs you intend to publish. Branches are mutable — the code they point to changes over time, which makes your spec non-reproducible. Always pin to a `:tag` or `:commit` for published versions.
+</Warning>
+
+## HTTP source
+
+Use the HTTP source type for pre-built binary frameworks, XCFrameworks, or other archive artifacts that you host separately from source code.
+
+```ruby
+spec.source = {
+  :http => 'https://example.com/releases/MyLib-2.1.0.zip',
+  :sha256 => 'a3f1c8...'
+}
+```
+
+| Option | Description |
+|---|---|
+| `:http` | The URL of the archive to download (required). |
+| `:sha256` | SHA-256 checksum of the archive. Strongly recommended. |
+| `:sha1` | SHA-1 checksum of the archive. Use `:sha256` when possible. |
+| `:type` | Force a specific archive type (`:zip`, `:tgz`, `:tar`, `:tbz`, `:txz`, `:dmg`). CocoaPods infers type from the URL extension when omitted. |
+| `:flatten` | Set to `true` to flatten a single-folder archive. |
+
+<Info>
+Providing a `:sha256` or `:sha1` checksum lets CocoaPods verify the downloaded archive has not been tampered with or replaced at the origin URL. Omitting checksums is technically valid but reduces supply-chain integrity for your consumers.
+</Info>
+
+## SVN source
+
+Use the SVN source type for libraries hosted in a Subversion repository.
+
+```ruby
+spec.source = {
+  :svn => 'http://svn.example.com/MyLib/trunk',
+  :revision => '1234'
+}
+```
+
+| Option | Description |
+|---|---|
+| `:svn` | The repository URL (required). |
+| `:revision` | A specific revision number to check out. |
+| `:tag` | A tag path within the repository. |
+
+## Mercurial (hg) source
+
+Use the Mercurial source type for libraries hosted in a Mercurial repository.
+
+```ruby
+spec.source = {
+  :hg => 'https://example.com/MyLib',
+  :tag => '2.1.0'
+}
+```
+
+| Option | Description |
+|---|---|
+| `:hg` | The repository URL (required). |
+| `:tag` | A tag to check out. |
+| `:revision` | A specific changeset identifier to check out. |
+
+## Local path source
+
+The path source type resolves the library from a local directory on disk rather than a remote server. This is useful during development when you are working on a pod and a consumer project simultaneously.
+
+```ruby
+spec.source = { :path => '../MyLib' }
+```
+
+<Warning>
+Path sources cannot be published to the CocoaPods registry. They resolve to an absolute path on your machine, which is meaningless to other developers. Use a path source only in local development; switch to a git source with a tag before running `pod trunk push`.
+</Warning>

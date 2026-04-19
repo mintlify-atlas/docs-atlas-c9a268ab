@@ -1,0 +1,116 @@
+---
+title: "Pod versioning: semver, immutability, and pre-releases"
+description: "Understand semantic versioning, immutable published podspecs, pre-release tags, and CocoaPods version compatibility in the Specs registry."
+---
+
+The CocoaPods Specs registry uses semantic versioning for all published pods. Once a version's podspec is committed to the registry, it is immutable — the content of that file will never change. This guarantee lets CocoaPods clients cache podspecs with confidence and ensures that builds remain reproducible over time.
+
+## Semantic versioning
+
+Pods follow the [Semantic Versioning](https://semver.org) specification: `MAJOR.MINOR.PATCH`.
+
+- **MAJOR** — incompatible API changes
+- **MINOR** — new functionality added in a backwards-compatible way
+- **PATCH** — backwards-compatible bug fixes
+
+<Tip>
+  Bump the patch version for bug fixes, the minor version for new features that don't break existing APIs, and the major version for breaking changes. Following semver strictly helps your users choose safe version ranges in their Podfiles.
+</Tip>
+
+Examples of valid version strings:
+
+```text
+1.0.0
+2.3.1
+5.0.0-beta.1
+```
+
+## Multiple versions coexist
+
+Each version of a pod lives in its own subdirectory inside the pod's shard path. All published versions remain available simultaneously:
+
+```text
+Specs/a/0/0/AJSDKAppSp/
+├── 0.0.1/
+│   └── AJSDKAppSp.podspec.json
+├── 0.0.2/
+│   └── AJSDKAppSp.podspec.json
+└── 1.0.0/
+    └── AJSDKAppSp.podspec.json
+```
+
+In your Podfile you can pin to an exact version or use a version requirement:
+
+```ruby
+# Exact version
+pod 'AJSDKAppSp', '0.0.1'
+
+# Optimistic operator — any version >= 0.0.1 and < 0.1
+pod 'AJSDKAppSp', '~> 0.0.1'
+
+# Minimum version
+pod 'AJSDKAppSp', '>= 0.0.1'
+```
+
+## Immutability
+
+Once a podspec is published to the registry, you cannot edit it. The file at `Specs/{s1}/{s2}/{s3}/{PodName}/{version}/{PodName}.podspec.json` is permanent.
+
+If you need to correct a published podspec, your options are:
+
+- **Publish a new version** with the corrected metadata
+- **Deprecate** the old version to warn users away from it
+- **Delete** the version as a last resort (see below)
+
+<Warning>
+  Do not delete published versions unless absolutely necessary. Deleting a version breaks any project that has pinned to that version or resolved it in a `Podfile.lock`. Prefer deprecation, which flags the version without removing it.
+</Warning>
+
+For guidance on deprecating or deleting a published pod, see [managing pods](/publishing/managing-pods).
+
+## CocoaPods-version.yml
+
+The repository root contains a `CocoaPods-version.yml` file that communicates compatibility metadata to CocoaPods clients:
+
+```yaml
+---
+min: 1.0.0
+last: 1.16.1
+prefix_lengths:
+- 1
+- 1
+- 1
+```
+
+| Field | Description |
+|-------|-------------|
+| `min` | Minimum CocoaPods version required to use this Specs repo |
+| `last` | Most recently tested and released CocoaPods version |
+| `prefix_lengths` | Shard depth configuration — each value is the number of characters contributed by one directory level under `Specs/` |
+
+The `prefix_lengths` value `[1, 1, 1]` means the shard path uses three levels, each one character wide, for a total of three characters. This matches the directory layout described in [repository structure](/repo/structure).
+
+This file is copied to the CDN `_site/` directory on every deploy so clients can fetch it without cloning the repository:
+
+```bash
+curl https://cdn.cocoapods.org/CocoaPods-version.yml
+```
+
+## Pre-release versions
+
+You can publish pre-release versions using a hyphen-separated tag after the version number:
+
+```text
+1.0.0-alpha.1
+1.0.0-beta.1
+1.0.0-rc.1
+```
+
+Pre-release versions are valid semver and are stored in the registry like any other version. However, CocoaPods does not resolve pre-release versions unless a user explicitly requests them — either by pinning to the exact pre-release version string or by using the `--pre` flag when searching.
+
+```ruby
+# Opt in to a specific pre-release version
+pod 'MyLibrary', '1.0.0-beta.1'
+```
+
+This means publishing a pre-release version is safe: existing users on stable versions are not affected.

@@ -1,0 +1,64 @@
+---
+title: "Register with CocoaPods Trunk to publish pods"
+description: "Register a Trunk account, verify your email, and authenticate your machine so you can publish pods to the CocoaPods Specs registry."
+---
+
+CocoaPods Trunk is the only way to publish a pod to the CocoaPods Specs registry. There is no alternative submission path — pull requests to the Specs repository are not accepted and are automatically closed every night. To share your library with the community, you must register with Trunk and push through the CLI.
+
+## What is Trunk?
+
+Trunk is the CocoaPods publishing service. It authenticates pod authors, validates incoming podspecs, and writes accepted specs to the Specs repository. Every pod you see on the registry was submitted through Trunk using `pod trunk push`. Your Trunk account is tied to an email address and can own or co-own multiple pods.
+
+<Warning>
+The Specs repository does not accept pull requests. Any PR you open against the Specs repo will be automatically closed by a nightly job with instructions to use `pod trunk push` instead.
+</Warning>
+
+## Register with Trunk
+
+Run the following command to create your Trunk account. Replace the email, name, and description with your own details:
+
+```bash
+pod trunk register orta@cocoapods.org 'Orta Therox' --description='macbook pro'
+```
+
+- The first argument is your email address.
+- The second argument is your display name (used in pod ownership records).
+- `--description` is optional but recommended — it labels the session so you can identify it later when managing multiple devices.
+
+After running the command, CocoaPods sends a verification email to the address you provided. Open the email and click the link to activate your session. The link expires after a short time, so complete verification before closing the email.
+
+<Note>
+You must verify your email before you can push any pods. The `pod trunk push` command will return an authentication error until the verification link has been clicked.
+</Note>
+
+## Verify your session
+
+Once you have clicked the verification link, confirm your session is active:
+
+```bash
+pod trunk me
+```
+
+A successful response shows your name, email, and a list of active sessions:
+
+```
+  - Name:     Orta Therox
+  - Email:    orta@cocoapods.org
+  - Since:    2014-08-01 17:46:13 UTC
+
+  Pods:
+  - MyLibrary
+
+  Sessions:
+  - macbook pro
+    - Created:  2024-01-15 10:23:44 UTC
+    - Expires:  2024-07-15 10:23:44 UTC
+```
+
+If the command returns an authentication error, re-run `pod trunk register` to generate a new session token and verify it.
+
+## Managing sessions
+
+Each time you register from a new machine or after a session expires, a new session is created. The `pod trunk me` output lists all active sessions, so you can track which devices are authenticated. Sessions expire automatically over time. If your session has expired, re-register using the same email address to generate a new one.
+
+Once your account is active, you are ready to push your first pod. See [Submit your pod to the CocoaPods registry](/publishing/submitting-a-pod) for the full push workflow.

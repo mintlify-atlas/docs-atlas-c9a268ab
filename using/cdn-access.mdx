@@ -1,0 +1,139 @@
+---
+title: "CocoaPods CDN index endpoints and podspec URLs"
+description: "Reference for CocoaPods CDN endpoints: index file formats, shard naming conventions, and how to fetch individual podspecs from cdn.cocoapods.org."
+---
+
+The CocoaPods Specs repository is served through a CDN, so CocoaPods clients never need to clone the full Git repository to resolve dependencies. This page documents the available CDN endpoints, explains how the sharded index is structured, and shows you how to fetch individual podspecs programmatically.
+
+<Info>
+CocoaPods 1.7 and later use the CDN source by default. Projects created or updated with a modern CocoaPods version automatically resolve specs from `https://cdn.cocoapods.org/` instead of cloning the full Git repository.
+</Info>
+
+## CDN base URL
+
+All CDN resources are served from:
+
+```
+https://cdn.cocoapods.org/
+```
+
+Every file and podspec in the registry is accessible as a path under this base URL.
+
+## Index files
+
+The CDN exposes several index files that CocoaPods clients use to resolve pod names and versions.
+
+| File | Description |
+|---|---|
+| `all_pods.txt` | Newline-separated list of every pod name in the registry |
+| `all_pods_versions_{shard}.txt` | Pod names and their versions for a given shard (e.g., `all_pods_versions_a_0_0.txt`) |
+| `deprecated_podspecs.txt` | Paths to podspecs that have been marked as deprecated |
+| `CocoaPods-version.yml` | Minimum and latest supported CocoaPods versions |
+
+Fetch any of these files with `curl`:
+
+```bash
+# All pod names
+curl https://cdn.cocoapods.org/all_pods.txt
+
+# Versions for pods in the a/0/0 shard
+curl https://cdn.cocoapods.org/all_pods_versions_a_0_0.txt
+
+# Deprecated podspec paths
+curl https://cdn.cocoapods.org/deprecated_podspecs.txt
+
+# Supported CocoaPods version metadata
+curl https://cdn.cocoapods.org/CocoaPods-version.yml
+```
+
+The `CocoaPods-version.yml` file currently contains:
+
+```yaml
+---
+min: 1.0.0
+last: 1.16.1
+prefix_lengths:
+- 1
+- 1
+- 1
+```
+
+`min` is the oldest CocoaPods version that can use the CDN. `last` is the most recently published CocoaPods release.
+
+Each `all_pods_versions_{shard}.txt` file lists one pod per line. Each line contains the pod name followed by all published versions, separated by `/`:
+
+```
+AJSDKAppSp/0.0.1
+```
+
+A pod with multiple versions would appear as:
+
+```
+DfPodTest/0.0.1/0.0.2
+```
+
+## Shard naming
+
+The CDN uses a sharded directory structure to avoid filesystem and CDN limits on the number of entries in a single directory. Each pod's shard is determined by the first three characters of the pod name's path fragment, each contributing one path segment.
+
+<Note>
+The shard path segment uses the first three path prefix characters as defined by `prefix_lengths: [1, 1, 1]` in `CocoaPods-version.yml`. Each digit in the shard filename maps to one directory level under `Specs/`.
+</Note>
+
+For example, the shard name `a_0_0` maps to the directory path `Specs/a/0/0/`. The shard index file for this path segment is:
+
+```
+https://cdn.cocoapods.org/all_pods_versions_a_0_0.txt
+```
+
+All pods whose names hash to the prefix `a/0/0` are listed in that shard file.
+
+## Fetching a specific podspec
+
+Individual podspecs are available at a predictable URL pattern:
+
+```
+https://cdn.cocoapods.org/Specs/{s1}/{s2}/{s3}/{PodName}/{version}/{PodName}.podspec.json
+```
+
+Where `{s1}/{s2}/{s3}` is the three-segment shard path for the pod.
+
+For example, the podspec for `AJSDKAppSp` version `0.0.1` lives in the `a/0/0` shard and is accessible at:
+
+```
+https://cdn.cocoapods.org/Specs/a/0/0/AJSDKAppSp/0.0.1/AJSDKAppSp.podspec.json
+```
+
+Fetch it directly with `curl`:
+
+```bash
+curl https://cdn.cocoapods.org/Specs/a/0/0/AJSDKAppSp/0.0.1/AJSDKAppSp.podspec.json
+```
+
+The response is a JSON object with all the pod's metadata:
+
+```json
+{
+  "name": "AJSDKAppSp",
+  "version": "0.0.1",
+  "summary": "ios AJSDKAppSp versionUpdate Notice",
+  "homepage": "https://github.com/anji-plus/aj_ios_appsp",
+  "license": "MIT",
+  "authors": {
+    "blackxu": "747373635@qq.com"
+  },
+  "platforms": {
+    "ios": "9.0"
+  },
+  "source": {
+    "git": "https://github.com/anji-plus/aj_ios_appsp.git",
+    "tag": "0.0.1"
+  },
+  "requires_arc": true,
+  "swift_versions": "4.0",
+  "source_files": "AppSpSDK/AppSpSDK/**/*.swift",
+  "swift_version": "4.0"
+}
+```
+
+A `404` response means the pod name or version does not exist in the registry. Use the `all_pods.txt` index to verify the pod name before constructing a spec URL.

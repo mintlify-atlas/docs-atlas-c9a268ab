@@ -1,0 +1,161 @@
+---
+title: "Podspec field reference: all .podspec DSL options"
+description: "Complete reference for every field available in a CocoaPods .podspec file, with types, required status, and accepted value examples."
+---
+
+A podspec defines a library's metadata, source location, and build configuration. CocoaPods reads this file to know how to fetch, compile, and link your code into a consumer's Xcode project. Every pod in the registry has exactly one podspec per version, written in a Ruby DSL and stored as JSON after publishing.
+
+## Identity fields
+
+These fields identify the pod in the registry and on CocoaPods.org.
+
+<ParamField path="name" type="string" required>
+  The name of the pod. Must be unique in the registry and must match the filename (`MyLibrary.podspec`). Case-sensitive.
+</ParamField>
+
+<ParamField path="version" type="string" required>
+  Semantic version string for this release. CocoaPods uses this value for dependency resolution. Example: `"1.0.0"`.
+</ParamField>
+
+<ParamField path="summary" type="string" required>
+  A one-line description of the pod, 140 characters or fewer. Shown in search results on CocoaPods.org.
+</ParamField>
+
+<ParamField path="description" type="string">
+  A longer description shown on the pod's CocoaPods.org page. Supports Markdown. Use the Ruby heredoc syntax to write multi-line descriptions cleanly.
+</ParamField>
+
+<ParamField path="homepage" type="string" required>
+  URL to the library's homepage or repository. Must be a valid HTTP or HTTPS URL.
+</ParamField>
+
+<ParamField path="documentation_url" type="string">
+  Link to the library's documentation site. When present, CocoaPods.org displays it as the primary docs link instead of the homepage.
+</ParamField>
+
+<ParamField path="license" type="hash or string" required>
+  The library's license. Accepted as a plain string (`"MIT"`) or a hash with `:type` and an optional `:file` key pointing to the license file in the repository. Example: `{ :type => 'MIT', :file => 'LICENSE' }`.
+</ParamField>
+
+<ParamField path="author" type="hash or string" required>
+  The author or authors of the library. Accepted as a string (`"Jane Smith"`) or a hash mapping names to email addresses (`{ 'Jane Smith' => 'jane@example.com' }`).
+</ParamField>
+
+<ParamField path="social_media_url" type="string">
+  A social media URL for the author or library, typically a Twitter profile URL. CocoaPods.org uses this to display a follow link.
+</ParamField>
+
+## Source fields
+
+These fields tell CocoaPods where to find your code and which files to include in the build.
+
+<ParamField path="source" type="hash" required>
+  Where CocoaPods fetches the library. The hash key identifies the source type (`:git`, `:http`, `:svn`, `:hg`, or `:path`). See the [source types reference](/reference/source-types) for all options and examples.
+</ParamField>
+
+<ParamField path="source_files" type="string or string[]">
+  Glob pattern or array of glob patterns identifying the source files to compile. Patterns are relative to the podspec file. Example: `'Sources/**/*.swift'`.
+</ParamField>
+
+<ParamField path="exclude_files" type="string or string[]">
+  Glob pattern or array of patterns for files to exclude from `source_files`. Useful for excluding platform-specific files or test utilities.
+</ParamField>
+
+<ParamField path="public_header_files" type="string or string[]">
+  Glob pattern or array of patterns identifying headers that should be exposed to consumers. Only relevant for Objective-C pods. Headers not listed here are treated as private.
+</ParamField>
+
+<ParamField path="private_header_files" type="string or string[]">
+  Glob pattern or array of patterns identifying headers that are part of the pod but should not be exposed to consumers.
+</ParamField>
+
+## Build configuration
+
+These fields control how CocoaPods compiles and links the library.
+
+<ParamField path="swift_versions" type="string[]">
+  Array of Swift language version strings the pod is compatible with. Example: `['5.0', '5.1', '5.9']`. CocoaPods uses this to validate compatibility with the consumer's Swift version.
+</ParamField>
+
+<ParamField path="requires_arc" type="boolean">
+  Whether the source files must be compiled with Automatic Reference Counting (ARC). Defaults to `true` for modern pods. Set to `false` only for legacy Objective-C code that manages memory manually.
+</ParamField>
+
+<ParamField path="frameworks" type="string or string[]">
+  Apple system framework or frameworks to link against. Example: `['UIKit', 'Foundation']`. Do not include the `.framework` extension.
+</ParamField>
+
+<ParamField path="weak_frameworks" type="string or string[]">
+  Frameworks to link weakly. Use this for frameworks that may not be present on all deployment targets (for example, a framework introduced in a later OS version than your minimum deployment target).
+</ParamField>
+
+<ParamField path="libraries" type="string or string[]">
+  System libraries to link. Specify without the `lib` prefix or `.a` extension. Example: `['z', 'sqlite3']`.
+</ParamField>
+
+<ParamField path="compiler_flags" type="string or string[]">
+  Additional flags passed to the compiler for this pod's source files. Example: `'-Wno-error=deprecated-declarations'`.
+</ParamField>
+
+<ParamField path="pod_target_xcconfig" type="hash">
+  Xcode build settings applied to the pod's own build target. Keys and values correspond to Xcode build setting names. Example: `{ 'SWIFT_OPTIMIZATION_LEVEL' => '-Onone' }`.
+</ParamField>
+
+<ParamField path="user_target_xcconfig" type="hash">
+  Xcode build settings propagated to the consumer's target. Use sparingly — these settings affect the consumer's build and can cause conflicts. Prefer `pod_target_xcconfig` for settings that only affect the pod itself.
+</ParamField>
+
+## Dependencies
+
+<ParamField path="dependency" type="string, version constraint">
+  Declares a required pod and optional version constraint. Accepts one or two version arguments. See the [dependencies reference](/reference/dependencies) for version operators and subspec syntax.
+</ParamField>
+
+## Platform and deployment targets
+
+Use `spec.platform` for single-platform pods or `spec.ios.deployment_target` (and equivalent) for multi-platform pods. See the [platform support reference](/reference/platform-support) for full details.
+
+## Full example
+
+The following podspec demonstrates the most commonly used fields together:
+
+```ruby
+Pod::Spec.new do |spec|
+  # Identity
+  spec.name         = 'MyLibrary'
+  spec.version      = '2.1.0'
+  spec.summary      = 'A concise description of MyLibrary in 140 chars or fewer.'
+  spec.description  = <<-DESC
+    MyLibrary provides a set of utilities for working with network requests
+    in Swift. It wraps URLSession with a clean, composable API.
+  DESC
+  spec.homepage     = 'https://github.com/example/MyLibrary'
+  spec.license      = { :type => 'MIT', :file => 'LICENSE' }
+  spec.author       = { 'Jane Smith' => 'jane@example.com' }
+  spec.social_media_url = 'https://twitter.com/example'
+
+  # Platforms
+  spec.ios.deployment_target  = '13.0'
+  spec.macos.deployment_target = '10.15'
+
+  # Source
+  spec.source       = { :git => 'https://github.com/example/MyLibrary.git',
+                        :tag => spec.version.to_s }
+  spec.source_files = 'Sources/**/*.swift'
+  spec.exclude_files = 'Sources/**/*+Test.swift'
+
+  # Build
+  spec.swift_versions  = ['5.7', '5.9']
+  spec.requires_arc    = true
+  spec.frameworks      = ['Foundation', 'Network']
+  spec.weak_frameworks = 'Combine'
+
+  # Dependencies
+  spec.dependency 'Alamofire', '~> 5.0'
+  spec.dependency 'SwiftyJSON', '>= 5.0', '< 6.0'
+end
+```
+
+<Tip>
+Run `pod spec lint MyLibrary.podspec` before publishing to catch missing required fields and validation errors locally.
+</Tip>

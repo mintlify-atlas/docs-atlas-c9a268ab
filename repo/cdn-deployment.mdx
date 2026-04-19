@@ -1,0 +1,118 @@
+---
+title: "How the Specs registry CDN index is built and deployed"
+description: "Understand how Netlify builds and deploys the sharded CDN index from the Specs repo so CocoaPods clients resolve pods without cloning Git."
+---
+
+The Specs repository is deployed to a CDN via Netlify. On every push to the repository, a build script generates a static `_site/` directory containing index files that CocoaPods uses to resolve pod names and versions. This means your CocoaPods client never needs to clone the full Git repository — it downloads only the shard index files and individual podspecs it needs.
+
+<Note>
+  CocoaPods 1.7 and later use the CDN source by default. Add `source 'https://cdn.cocoapods.org/'` to your Podfile to use CDN resolution explicitly, or rely on the default behavior in modern CocoaPods versions.
+</Note>
+
+## Build process
+
+The Netlify configuration lives in `netlify.toml` at the root of the repository:
+
+```toml
+[build]
+  command = "Scripts/netlify_deploy.sh"
+  publish = "_site"
+```
+
+Netlify runs `Scripts/netlify_deploy.sh` on every deploy and serves the contents of the `_site/` directory as the CDN root.
+
+## What the deploy script does
+
+The deploy script (`Scripts/netlify_deploy.sh`) prepares the `_site/` directory in three steps:
+
+<Steps>
+  <Step title="Create the output directory">
+    The script creates `_site/` if it does not already exist.
+
+    ```bash
+    mkdir _site || true
+    ```
+  </Step>
+  <Step title="Generate sharded index files">
+    The Ruby indexer (`Scripts/create_pods_and_versions_index.rb`) walks the entire `Specs/` tree and writes one shard index file per shard, plus the full pod list and the deprecated podspec list.
+
+    ```bash
+    bundle exec ruby Scripts/create_pods_and_versions_index.rb _site
+    ```
+  </Step>
+  <Step title="Copy redirects and version metadata">
+    The Netlify redirects file is copied to `_site/_redirects`, and all `.yml` files (including `CocoaPods-version.yml`) are copied to `_site/`.
+
+    ```bash
+    cp Scripts/netlify_redirects.txt _site/_redirects
+    cp ./*.yml _site/
+    ```
+  </Step>
+</Steps>
+
+## Generated index files
+
+The Ruby script (`Scripts/create_pods_and_versions_index.rb`) produces four categories of output in `_site/`:
+
+### Shard version files
+
+One file per shard, named `all_pods_versions_{shard}.txt`. Each line lists a pod name followed by all its published versions, separated by `/`, in ascending order:
+
+```text
+AJSDKAppSp/0.0.1/0.0.2/0.0.3/0.0.4
+DfPodTest/0.0.1/0.0.2
+```
+
+The shard suffix uses underscores to join the three directory levels — for example, `a_0_0` corresponds to `Specs/a/0/0/`. CocoaPods fetches only the shard file for the pods it needs to resolve.
+
+### All pods list
+
+`all_pods.txt` contains every pod name in the registry, one per line. CocoaPods uses this file to validate pod names and power search.
+
+```text
+AJSDKAppSp
+DfPodTest
+MyLibrary
+```
+
+### Deprecated podspecs
+
+`deprecated_podspecs.txt` lists the relative paths (from the repo root) of every podspec marked as deprecated. CocoaPods uses this to warn users when they depend on a deprecated pod.
+
+```text
+Specs/a/0/0/AJSDKAppSp/0.0.1/AJSDKAppSp.podspec.json
+```
+
+### Version metadata
+
+`CocoaPods-version.yml` is copied directly from the repository root. It tells CocoaPods clients the minimum supported version and the latest known release.
+
+```yaml
+---
+min: 1.0.0
+last: 1.16.1
+prefix_lengths:
+- 1
+- 1
+- 1
+```
+
+## CDN base URL
+
+All generated files are served under the CDN base URL:
+
+```text
+https://cdn.cocoapods.org/
+```
+
+Individual podspecs are accessible at:
+
+```text
+https://cdn.cocoapods.org/Specs/{s1}/{s2}/{s3}/{PodName}/{version}/{PodName}.podspec.json
+```
+
+<Info>
+  The registry currently contains over 100,000 pods and more than 800,000 podspec files. The sharded index approach keeps each shard file small enough to download quickly, while the full `all_pods.txt` provides a complete pod list for search and validation.
+</Info>
+
+For more on how shard paths are calculated from pod names, see [repository structure](/repo/structure).

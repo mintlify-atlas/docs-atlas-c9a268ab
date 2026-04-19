@@ -1,0 +1,80 @@
+{
+  "projectType": "data-platform",
+  "projectName": "CocoaPods Specs",
+  "projectDescription": "The CocoaPods Master Specs Repo is the centralized registry of over 100,000 public iOS and macOS library podspecs, served via CDN for dependency resolution.",
+  "theme": "palm",
+  "primaryColor": "#fc2d06",
+  "lightColor": "#fc947c",
+  "darkColor": null,
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "how-it-works"
+            ]
+          },
+          {
+            "group": "Using the Registry",
+            "pages": [
+              "using/finding-pods",
+              "using/installing-pods",
+              "using/cdn-access"
+            ]
+          },
+          {
+            "group": "Publishing Pods",
+            "pages": [
+              "publishing/creating-a-podspec",
+              "publishing/trunk-setup",
+              "publishing/submitting-a-pod",
+              "publishing/managing-pods"
+            ]
+          },
+          {
+            "group": "Podspec Reference",
+            "pages": [
+              "reference/podspec-format",
+              "reference/source-types",
+              "reference/platform-support",
+              "reference/dependencies"
+            ]
+          },
+          {
+            "group": "Repository Structure",
+            "pages": [
+              "repo/structure",
+              "repo/cdn-deployment",
+              "repo/versioning"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Centralized registry of 100,000+ iOS and macOS library podspecs",
+    "CDN-backed delivery for fast dependency resolution worldwide",
+    "Sharded index for efficient pod lookup by name prefix",
+    "CocoaPods Trunk integration for publishing (no PRs accepted)",
+    "Supports pod deprecation and deletion via trunk CLI",
+    "Algolia-powered search index for pod discovery",
+    "Automated nightly PR closure to enforce trunk-only submissions",
+    "Podspec JSON format with versioned entries per pod"
+  ],
+  "publicApiSurface": [
+    "CDN endpoint: all_pods.txt — full list of pod names",
+    "CDN endpoint: all_pods_versions_{shard}.txt — sharded pod/version index",
+    "CDN endpoint: deprecated_podspecs.txt — list of deprecated podspecs",
+    "CDN endpoint: CocoaPods-version.yml — minimum and latest CocoaPods version",
+    "Specs/{shard}/{shard}/{shard}/{PodName}/{version}/{PodName}.podspec.json — individual podspec",
+    "pod trunk push — publish a new pod version",
+    "pod trunk delete — remove a pod version",
+    "pod trunk deprecate — mark a pod as deprecated"
+  ]
+}
